@@ -1,0 +1,61 @@
+import numpy as np
+
+# N is batch size; D_in is input dimension;
+# H1, H2 are hidden dimensions; D_out is output dimension.
+N, D_in, H1, H2, D_out = 50, 8, 16, 8, 4
+
+# Create random input and output data
+x = np.random.randn(N, D_in)
+y0 = np.random.randn(N, D_out)
+y = 1 / (1 + np.exp(-y0))
+
+# Randomly initialize weights and biases
+on = np.ones((N, 1))
+w1 = 0.5 * np.random.randn(D_in, H1)
+b1 = np.random.randn(1, H1)
+bn1 = on.dot(b1)
+w2 = 0.5 * np.random.randn(H1, H2)
+b2 = np.random.randn(1, H2)
+bn2 = on.dot(b2)
+w3 = 0.5 * np.random.randn(H2, D_out)
+b3 = np.random.randn(1,D_out)
+bn3 = on.dot(b3)
+
+learning_rate = 1e-4
+for t in range(500):
+    # Forward pass: compute predicted y
+    h1 = x.dot(w1) + bn1
+    h1_relu = np.maximum(h1, 0)
+    h2 = h1_relu.dot(w2) + bn2
+    h2_relu = np.maximum(h2, 0)
+    h3 = h2_relu.dot(w3) + bn3
+    y_pred = 1 / (1 + np.exp(-h3))
+
+    # Compute and print loss
+    loss = -np.multiply(y, np.log(y_pred)).sum() - np.multiply(1-y, np.log(1-y_pred)).sum()
+    print(t, loss)
+
+    # Backprop to compute gradients of w and b with respect to loss
+    grad_y_pred = - y/y_pred + (1-y)/(1-y_pred)
+    grad_h3 = np.exp(grad_y_pred) / ((1 + np.exp(grad_y_pred))*(1 + np.exp(grad_y_pred)))
+    grad_w3 = h2_relu.T.dot(grad_y_pred)
+    grad_b3 = on.T.dot(grad_y_pred)
+    grad_h2_relu = grad_y_pred.dot(w3.T)
+    grad_h2 = grad_h2_relu.copy()
+    grad_h2[h2 < 0] = 0
+    grad_w2 = h1_relu.T.dot(grad_h2)
+    grad_b2 = on.T.dot(grad_h2)
+    grad_h1_relu = grad_h2.dot(w2.T)
+    grad_h1 = grad_h1_relu.copy()
+    grad_h1[h1 < 0] = 0
+    grad_w1 = x.T.dot(grad_h1)
+    grad_b1 = on.T.dot(grad_h1)
+
+
+    # Update w and b
+    w1 -= learning_rate * grad_w1
+    b1 -= learning_rate * grad_b1
+    w2 -= learning_rate * grad_w2
+    b2 -= learning_rate * grad_b2
+    w3 -= learning_rate * grad_w3
+    b3 -= learning_rate * grad_b3
